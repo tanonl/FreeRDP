@@ -609,7 +609,11 @@ static UINT ecam_dev_on_data_received(IWTSVirtualChannelCallback* pChannelCallba
 	if (!Stream_CheckAndLogRequiredCapacity(TAG, data, CAM_HEADER_SIZE))
 		return ERROR_NO_DATA;
 
-	winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), Stream_Length(data));
+	size_t dumpLen = Stream_Length(data);
+	if (dumpLen > 1000)
+		winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), 1000);
+	else
+		winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), dumpLen);
 
 	Stream_Read_UINT8(data, version);
 	Stream_Read_UINT8(data, messageId);

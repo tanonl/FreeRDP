@@ -93,7 +93,12 @@ UINT ecam_channel_write(WINPR_ATTR_UNUSED CameraPlugin* ecam, GENERIC_CHANNEL_CA
 	const char* hexTag = TAG;
 	if (hchannel && hchannel->plugin && ecam && hchannel->plugin != (IWTSPlugin*)ecam)
 		hexTag = CHANNELS_TAG("rdpecam-device.client");
-	winpr_HexDump(hexTag, WLOG_TRACE, Stream_Buffer(out), Stream_Length(out));
+
+	size_t dumpLen = Stream_Length(out);
+	if (dumpLen > 1000)
+		winpr_HexDump(hexTag, WLOG_TRACE, Stream_Buffer(out), 1000);
+	else
+		winpr_HexDump(hexTag, WLOG_TRACE, Stream_Buffer(out), dumpLen);
 
 	const UINT error = hchannel->channel->Write(hchannel->channel, (ULONG)Stream_Length(out),
 	                                            Stream_Buffer(out), NULL);
@@ -234,7 +239,11 @@ static UINT ecam_on_data_received(IWTSVirtualChannelCallback* pChannelCallback, 
 	if (!Stream_CheckAndLogRequiredCapacity(TAG, data, CAM_HEADER_SIZE))
 		return ERROR_NO_DATA;
 
-	winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), Stream_Length(data));
+	size_t dumpLen = Stream_Length(data);
+	if (dumpLen > 1000)
+		winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), 1000);
+	else
+		winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), dumpLen);
 
 	Stream_Read_UINT8(data, version);
 	Stream_Read_UINT8(data, messageId);
