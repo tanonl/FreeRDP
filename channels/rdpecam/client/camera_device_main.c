@@ -19,6 +19,7 @@
 
 #include <winpr/assert.h>
 #include <winpr/cast.h>
+#include <winpr/print.h>
 
 #include "camera.h"
 
@@ -607,6 +608,8 @@ static UINT ecam_dev_on_data_received(IWTSVirtualChannelCallback* pChannelCallba
 
 	if (!Stream_CheckAndLogRequiredCapacity(TAG, data, CAM_HEADER_SIZE))
 		return ERROR_NO_DATA;
+
+	winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), Stream_Length(data));
 
 	Stream_Read_UINT8(data, version);
 	Stream_Read_UINT8(data, messageId);

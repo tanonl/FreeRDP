@@ -19,6 +19,7 @@
 
 #include <winpr/assert.h>
 #include <winpr/cast.h>
+#include <winpr/print.h>
 
 #include "camera.h"
 
@@ -89,6 +90,10 @@ UINT ecam_channel_write(WINPR_ATTR_UNUSED CameraPlugin* ecam, GENERIC_CHANNEL_CA
 
 	WLog_DBG(TAG, "ChannelId=%d, MessageId=0x%02" PRIx8 ", Length=%d",
 	         hchannel->channel_mgr->GetChannelId(hchannel->channel), msg, Stream_Length(out));
+	const char* hexTag = TAG;
+	if (hchannel && hchannel->plugin && ecam && hchannel->plugin != (IWTSPlugin*)ecam)
+		hexTag = CHANNELS_TAG("rdpecam-device.client");
+	winpr_HexDump(hexTag, WLOG_TRACE, Stream_Buffer(out), Stream_Length(out));
 
 	const UINT error = hchannel->channel->Write(hchannel->channel, (ULONG)Stream_Length(out),
 	                                            Stream_Buffer(out), NULL);
@@ -228,6 +233,8 @@ static UINT ecam_on_data_received(IWTSVirtualChannelCallback* pChannelCallback, 
 
 	if (!Stream_CheckAndLogRequiredCapacity(TAG, data, CAM_HEADER_SIZE))
 		return ERROR_NO_DATA;
+
+	winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), Stream_Length(data));
 
 	Stream_Read_UINT8(data, version);
 	Stream_Read_UINT8(data, messageId);
