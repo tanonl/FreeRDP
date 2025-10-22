@@ -21,9 +21,22 @@
 #include <winpr/cast.h>
 #include <winpr/print.h>
 
+#include <inttypes.h>
+
 #include "camera.h"
 
 #define TAG CHANNELS_TAG("rdpecam-enum.client")
+
+static void rdpecam_trace_message(const char* prefix, UINT32 channelId, CAM_MSG_ID msg,
+                                  const BYTE* buf, size_t len)
+{
+    if (!buf || len == 0)
+        return;
+
+    WLog_DBG(TAG, "%s ch=%" PRIu32 " msg=0x%02X len=%zu", prefix, channelId,
+             (unsigned int)msg, len);
+    winpr_HexLogDump(TAG, WLOG_DEBUG, buf, len);
+}
 
 /**
  * Function description

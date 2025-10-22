@@ -24,7 +24,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <inttypes.h>
 
 #if defined(WITH_INPUT_FORMAT_MJPG)
 #include <libavcodec/avcodec.h>
@@ -67,17 +66,6 @@
  * The value picked not to overlap with enum values
  */
 #define CAM_MEDIA_FORMAT_MJPG_H264 0x0401
-
-static inline void rdpecam_trace_message(const char* prefix, UINT32 channelId,
-                                         CAM_MSG_ID msg, const BYTE* buf, size_t len)
-{
-    if (!buf || len == 0)
-        return;
-
-    WLog_DBG(TAG, "%s ch=%" PRIu32 " msg=0x%02X len=%zu", prefix, channelId,
-             (unsigned int)msg, len);
-    winpr_HexLogDump(TAG, WLOG_DEBUG, buf, len);
-}
 
 typedef struct s_ICamHal ICamHal;
 
