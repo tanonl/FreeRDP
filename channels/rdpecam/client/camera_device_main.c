@@ -40,7 +40,8 @@ static void rdpecam_trace_message(const char* prefix, UINT32 channelId, CAM_MSG_
 
     WLog_DBG(TAG, "%s ch=%" PRIu32 " msg=0x%02X len=%zu", prefix, channelId,
              (unsigned int)msg, len);
-    winpr_HexLogDump(TAG, WLOG_DEBUG, buf, len);
+    if (len > 0)
+        winpr_HexDump(TAG, WLOG_DEBUG, buf, len);
 }
 
 /* supported formats in preference order:
@@ -678,7 +679,7 @@ static UINT ecam_dev_on_data_received(IWTSVirtualChannelCallback* pChannelCallba
 
 	UINT32 channel_id = hchannel->channel_mgr->GetChannelId(hchannel->channel);
 	const BYTE* start = Stream_Pointer(data);
-	const size_t total_len = Stream_Remaining(data);
+	const size_t total_len = Stream_GetRemainingLength(data);
 	CAM_MSG_ID peek_msg = (total_len >= 2) ? (CAM_MSG_ID)start[1] : (CAM_MSG_ID)0;
 	rdpecam_trace_message("RX", channel_id, peek_msg, start, total_len);
 

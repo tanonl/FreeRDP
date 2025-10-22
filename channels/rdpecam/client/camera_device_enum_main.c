@@ -35,7 +35,8 @@ static void rdpecam_trace_message(const char* prefix, UINT32 channelId, CAM_MSG_
 
     WLog_DBG(TAG, "%s ch=%" PRIu32 " msg=0x%02X len=%zu", prefix, channelId,
              (unsigned int)msg, len);
-    winpr_HexLogDump(TAG, WLOG_DEBUG, buf, len);
+    if (len > 0)
+        winpr_HexDump(TAG, WLOG_DEBUG, buf, len);
 }
 
 /**
