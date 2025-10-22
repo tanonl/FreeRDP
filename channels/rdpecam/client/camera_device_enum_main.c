@@ -88,17 +88,8 @@ UINT ecam_channel_write(WINPR_ATTR_UNUSED CameraPlugin* ecam, GENERIC_CHANNEL_CA
 	Stream_SealLength(out);
 	WINPR_ASSERT(Stream_Length(out) <= UINT32_MAX);
 
-	WLog_DBG(TAG, "ChannelId=%d, MessageId=0x%02" PRIx8 ", Length=%d",
-	         hchannel->channel_mgr->GetChannelId(hchannel->channel), msg, Stream_Length(out));
-	const char* hexTag = TAG;
-	if (hchannel && hchannel->plugin && ecam && hchannel->plugin != (IWTSPlugin*)ecam)
-		hexTag = CHANNELS_TAG("rdpecam-device.client");
-
-	size_t dumpLen = Stream_Length(out);
-	if (dumpLen > 1000)
-		winpr_HexDump(hexTag, WLOG_TRACE, Stream_Buffer(out), 1000);
-	else
-		winpr_HexDump(hexTag, WLOG_TRACE, Stream_Buffer(out), dumpLen);
+	UINT32 channel_id = hchannel->channel_mgr->GetChannelId(hchannel->channel);
+	rdpecam_trace_message("TX", channel_id, msg, Stream_Buffer(out), Stream_Length(out));
 
 	const UINT error = hchannel->channel->Write(hchannel->channel, (ULONG)Stream_Length(out),
 	                                            Stream_Buffer(out), NULL);

@@ -664,11 +664,11 @@ static UINT ecam_dev_on_data_received(IWTSVirtualChannelCallback* pChannelCallba
 	if (!Stream_CheckAndLogRequiredCapacity(TAG, data, CAM_HEADER_SIZE))
 		return ERROR_NO_DATA;
 
-	size_t dumpLen = Stream_Length(data);
-	if (dumpLen > 1000)
-		winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), 1000);
-	else
-		winpr_HexDump(TAG, WLOG_TRACE, Stream_Buffer(data), dumpLen);
+	UINT32 channel_id = hchannel->channel_mgr->GetChannelId(hchannel->channel);
+	const BYTE* start = Stream_Pointer(data);
+	const size_t total_len = Stream_Remaining(data);
+	CAM_MSG_ID peek_msg = (total_len >= 2) ? (CAM_MSG_ID)start[1] : (CAM_MSG_ID)0;
+	rdpecam_trace_message("RX", channel_id, peek_msg, start, total_len);
 
 	Stream_Read_UINT8(data, version);
 	Stream_Read_UINT8(data, messageId);
