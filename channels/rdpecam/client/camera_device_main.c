@@ -21,6 +21,12 @@
 #include <winpr/cast.h>
 #include <winpr/print.h>
 
+#include <errno.h>
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "camera.h"
 
 #define TAG CHANNELS_TAG("rdpecam-device.client")
@@ -44,6 +50,48 @@ static const CAM_MEDIA_FORMAT_INFO supportedFormats[] = {
 	{ CAM_MEDIA_FORMAT_RGB32, CAM_MEDIA_FORMAT_H264 },
 };
 static const size_t nSupportedFormats = ARRAYSIZE(supportedFormats);
+
+#ifdef RDPECAM_DUMP_FRAMES
+static FILE* g_rdpecam_dump_file = NULL;
+static BOOL g_rdpecam_dump_initialized = FALSE;
+static UINT32 g_rdpecam_dump_sequence = 0;
+static pthread_mutex_t g_rdpecam_dump_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static void rdpecam_dump_sample(size_t streamIndex, const BYTE* sample, size_t size)
+{
+    pthread_mutex_lock(&g_rdpecam_dump_mutex);
+
+    if (!g_rdpecam_dump_initialized)
+    {
+        const char* path = getenv("FREERDP_RDPECAM_DUMP");
+        if (!path || !path[0])
+            path = "/tmp/rdpecam_samples.bin";
+
+        g_rdpecam_dump_file = fopen(path, "wb");
+        if (!g_rdpecam_dump_file)
+            WLog_WARN(TAG, "Unable to open RDPECAM dump file '%s': %s", path, strerror(errno));
+
+        g_rdpecam_dump_initialized = TRUE;
+    }
+
+    if (g_rdpecam_dump_file)
+    {
+        const uint32_t streamIdx = WINPR_ASSERTING_INT_CAST(uint32_t, streamIndex & 0xFF);
+        const uint32_t length = WINPR_ASSERTING_INT_CAST(uint32_t, size);
+
+        fwrite("RDPS", 1, 4, g_rdpecam_dump_file);
+        fwrite(&g_rdpecam_dump_sequence, sizeof(g_rdpecam_dump_sequence), 1, g_rdpecam_dump_file);
+        fwrite(&streamIdx, sizeof(streamIdx), 1, g_rdpecam_dump_file);
+        fwrite(&length, sizeof(length), 1, g_rdpecam_dump_file);
+        fwrite(sample, 1, size, g_rdpecam_dump_file);
+        fflush(g_rdpecam_dump_file);
+
+        g_rdpecam_dump_sequence++;
+    }
+
+    pthread_mutex_unlock(&g_rdpecam_dump_mutex);
+}
+#endif
 
 static void ecam_dev_write_media_type(wStream* s, CAM_MEDIA_TYPE_DESCRIPTION* mediaType)
 {
@@ -103,6 +151,13 @@ static UINT ecam_dev_send_sample_response(CameraDevice* dev, size_t streamIndex,
 	Stream_Write_UINT8(stream->sampleRespBuffer, WINPR_ASSERTING_INT_CAST(uint8_t, streamIndex));
 
 	Stream_Write(stream->sampleRespBuffer, sample, size);
+
+#ifdef RDPECAM_DUMP_FRAMES
+	{
+		const size_t sample_len = Stream_GetPosition(stream->sampleRespBuffer);
+		rdpecam_dump_sample(streamIndex, Stream_Buffer(stream->sampleRespBuffer), sample_len);
+	}
+#endif
 
 	/* channel write is protected by critical section in dvcman_write_channel */
 	return ecam_channel_write(dev->ecam, stream->hSampleReqChannel, msg, stream->sampleRespBuffer,
